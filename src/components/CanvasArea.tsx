@@ -13,7 +13,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { useEditorStore, setFitViewCallback } from '../model/store'
 import type { BoundedContext, UserNeedConnection, NeedContextConnection } from '../model/types'
-import { X, ArrowRight } from 'lucide-react'
+import { X, ArrowRight, Info } from 'lucide-react'
 import { PATTERN_DEFINITIONS, POWER_DYNAMICS_ICONS } from '../model/patternDefinitions'
 import { getHoverConnectedContextIds } from '../lib/canvasHelpers'
 import { interpolatePosition, getContextOpacity } from '../lib/temporal'
@@ -111,6 +111,7 @@ function CanvasContent() {
   const deleteUser = useEditorStore((s) => s.deleteUser)
   const deleteUserNeed = useEditorStore((s) => s.deleteUserNeed)
   const deleteGroup = useEditorStore((s) => s.deleteGroup)
+  const madeGroup = project && project.groups && project.groups.length > 0
 
   // Temporal state
   const currentDate = useEditorStore((s) => s.temporal.currentDate)
@@ -989,6 +990,21 @@ function CanvasContent() {
   return (
     <div className="relative w-full h-full">
       <TimeSlider />
+      {
+        // add context grouping awareness
+        selectedContextId ? (
+          madeGroup ? (
+            ''
+          ) : (
+            <div className="absolute bottom-4 bg-gray-200 rounded-md right-12 w-auto flex gap-x-1.5 justify-between">
+              <Info className="text-sky-400 text-xl" />
+              <p>"shift+click" on the contexts to make a Group.</p>
+            </div>
+          )
+        ) : (
+          ''
+        )
+      }
       <div className={`react-flow-wrapper w-full h-full ${isDragging ? 'dragging' : ''}`}>
         <ReactFlow
           nodes={nodes}
