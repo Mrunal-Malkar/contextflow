@@ -149,6 +149,7 @@ function Workspace() {
   const handleTabChange = (tab: 'repos' | 'teams') => {
     setSidebarTab(tab)
     localStorage.setItem('contextflow.sidebarTab', tab)
+    trackEvent('sidebar_tab_changed', null, { tab })
   }
 
   return (

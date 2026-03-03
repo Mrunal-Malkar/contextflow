@@ -476,19 +476,29 @@ export const useEditorStore = create<EditorState>((set) => ({
     }),
 
   addContextIssue: (contextId, title, severity) =>
-    set(() => {
+    set((state) => {
       getCollabMutations().addContextIssue(contextId, title, severity)
+      const project = state.activeProjectId ? state.projects[state.activeProjectId] : null
+      trackEvent('issue_added', project, { severity })
       return {}
     }),
 
   updateContextIssue: (contextId, issueId, updates) =>
-    set(() => {
+    set((state) => {
       getCollabMutations().updateContextIssue(contextId, issueId, updates)
+      const project = state.activeProjectId ? state.projects[state.activeProjectId] : null
+      trackEvent('issue_updated', project, {
+        fields_changed: Object.keys(updates),
+      })
       return {}
     }),
 
   deleteContextIssue: (contextId, issueId) =>
-    set(() => {
+    set((state) => {
+      const project = state.activeProjectId ? state.projects[state.activeProjectId] : null
+      const context = project?.contexts.find((c) => c.id === contextId)
+      const issue = context?.issues?.find((i) => i.id === issueId)
+      trackEvent('issue_deleted', project, { severity: issue?.severity })
       getCollabMutations().deleteContextIssue(contextId, issueId)
       return {}
     }),
@@ -1450,6 +1460,15 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   setActiveKeyframe: (keyframeId) =>
     set((state) => {
+      const project = state.activeProjectId ? state.projects[state.activeProjectId] : null
+      if (keyframeId) {
+        trackEvent('keyframe_selected', project, {
+          has_previous_keyframe: state.temporal.activeKeyframeId !== null,
+        })
+      } else {
+        trackEvent('keyframe_deselected', project)
+      }
+
       const transition = calculateKeyframeTransition(
         keyframeId,
         state.temporal.activeKeyframeId,
