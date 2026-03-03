@@ -33,9 +33,17 @@ npx wrangler dev
 VITE_COLLAB_HOST=localhost:8787 npm run dev
 ```
 
+## Quality Gates
+
+**Local hooks** (husky) run automatically:
+- **Pre-commit**: Prettier auto-formats staged `src/` files (via lint-staged)
+- **Pre-push**: `npm run typecheck` and `npm run lint` must pass
+
+**CI** (GitHub Actions) runs on every push to `main`: typecheck, lint, format:check, build.
+
 ## Deployment
 
-**Production** deploys automatically via GitHub Actions on every push to `main`. The workflow (`.github/workflows/deploy.yml`) runs typecheck, lint, and build, then deploys to GitHub Pages. There is no manual deploy step for production.
+**Production** deploys automatically via GitHub Actions on every push to `main`. The workflow (`.github/workflows/deploy.yml`) runs the quality gates above, then deploys to GitHub Pages. There is no manual deploy step for production.
 
 - URL: https://contextflow.virtualgenius.com
 - Check deploy status: `gh run list --limit 3`
