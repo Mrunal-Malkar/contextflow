@@ -32,6 +32,9 @@ yarn-error.log*
 .stryker-tmp/
 reports/mutation/
 
+# Analysis reports
+reports/analysis/
+
 # Environment files
 .env
 .env.local
