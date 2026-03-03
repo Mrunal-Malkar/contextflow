@@ -95,7 +95,10 @@ export function TopBar() {
 
       if (e.key === '?' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
-        setShowKeyboardShortcuts((prev) => !prev)
+        setShowKeyboardShortcuts((prev) => {
+          if (!prev) trackEvent('keyboard_shortcuts_opened', project || null, { source: 'shortcut' })
+          return !prev
+        })
       }
     }
     document.addEventListener('keydown', handleKeyDown)
@@ -161,6 +164,7 @@ export function TopBar() {
 
   const handleImportReplace = () => {
     if (importConflict) {
+      trackEvent('import_conflict_resolved', project || null, { resolution: 'replace' })
       importProject(importConflict.importedProject)
       setImportConflict(null)
     }
@@ -168,6 +172,7 @@ export function TopBar() {
 
   const handleImportAsNew = () => {
     if (importConflict) {
+      trackEvent('import_conflict_resolved', project || null, { resolution: 'import_as_new' })
       const existingNames = Object.values(projects).map((p) => p.name)
       const newProject = importProjectAsNew(importConflict.importedProject, existingNames)
       importProject(newProject)
@@ -344,7 +349,10 @@ export function TopBar() {
 
         <SimpleTooltip text="Get a shareable link to collaborate with others">
           <IconButton
-            onClick={() => setShowShareDialog(true)}
+            onClick={() => {
+              trackEvent('share_dialog_opened', project || null)
+              setShowShareDialog(true)
+            }}
             icon={<Share2 size={16} />}
             ariaLabel="Share project"
           />
@@ -386,10 +394,12 @@ export function TopBar() {
                 <div className="border-t border-slate-200 dark:border-neutral-700" />
                 <SettingsHelp
                   onOpenGettingStarted={() => {
+                    trackEvent('getting_started_guide_opened', project || null)
                     setShowGettingStartedGuide(true)
                     setShowSettings(false)
                   }}
                   onOpenKeyboardShortcuts={() => {
+                    trackEvent('keyboard_shortcuts_opened', project || null)
                     setShowKeyboardShortcuts(true)
                     setShowSettings(false)
                   }}

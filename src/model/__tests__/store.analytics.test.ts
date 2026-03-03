@@ -800,4 +800,81 @@ describe('store analytics integration', () => {
       expect(trackEventSpy).toHaveBeenCalledWith('redo_used', null)
     })
   })
+
+  describe('issue management analytics', () => {
+    it('tracks issue_added with severity', () => {
+      const acmeId = activateSampleProject()
+      const project = useEditorStore.getState().projects[acmeId]
+      const contextId = project.contexts[0].id
+      trackEventSpy.mockClear()
+
+      useEditorStore.getState().addContextIssue(contextId, 'Test issue', 'warning')
+
+      expect(trackEventSpy).toHaveBeenCalledWith('issue_added', expect.any(Object), {
+        severity: 'warning',
+      })
+    })
+
+    it('tracks issue_deleted with severity', () => {
+      activateSampleProject()
+      trackEventSpy.mockClear()
+
+      // Use a fake issue ID - tracking fires regardless of Yjs state
+      useEditorStore.getState().deleteContextIssue('ctx-1', 'issue-1')
+
+      expect(trackEventSpy).toHaveBeenCalledWith('issue_deleted', expect.any(Object), {
+        severity: undefined,
+      })
+    })
+
+    it('tracks issue_updated with changed fields', () => {
+      activateSampleProject()
+      trackEventSpy.mockClear()
+
+      useEditorStore.getState().updateContextIssue('ctx-1', 'issue-1', { severity: 'critical' })
+
+      expect(trackEventSpy).toHaveBeenCalledWith('issue_updated', expect.any(Object), {
+        fields_changed: ['severity'],
+      })
+    })
+  })
+
+  describe('temporal navigation analytics', () => {
+    it('tracks keyframe_selected when activating a keyframe', () => {
+      activateSampleProject()
+      trackEventSpy.mockClear()
+
+      useEditorStore.getState().setActiveKeyframe('keyframe-1')
+
+      expect(trackEventSpy).toHaveBeenCalledWith('keyframe_selected', expect.any(Object), {
+        has_previous_keyframe: false,
+      })
+    })
+
+    it('tracks keyframe_selected with has_previous_keyframe=true when switching', () => {
+      activateSampleProject()
+
+      // Activate first keyframe
+      useEditorStore.getState().setActiveKeyframe('keyframe-1')
+      trackEventSpy.mockClear()
+
+      // Switch to second keyframe
+      useEditorStore.getState().setActiveKeyframe('keyframe-2')
+
+      expect(trackEventSpy).toHaveBeenCalledWith('keyframe_selected', expect.any(Object), {
+        has_previous_keyframe: true,
+      })
+    })
+
+    it('tracks keyframe_deselected when deactivating', () => {
+      activateSampleProject()
+
+      useEditorStore.getState().setActiveKeyframe('keyframe-1')
+      trackEventSpy.mockClear()
+
+      useEditorStore.getState().setActiveKeyframe(null)
+
+      expect(trackEventSpy).toHaveBeenCalledWith('keyframe_deselected', expect.any(Object))
+    })
+  })
 })

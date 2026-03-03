@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Switch } from '../Switch'
+import { trackEvent } from '../../utils/analytics'
 
 export function SettingsIntegrations() {
   const [useCodeCohesionAPI, setUseCodeCohesionAPI] = useState(() => {
@@ -19,6 +20,10 @@ export function SettingsIntegrations() {
           onCheckedChange={(checked) => {
             setUseCodeCohesionAPI(checked)
             localStorage.setItem('contextflow.useCodeCohesionAPI', String(checked))
+            trackEvent('integration_toggled', null, {
+              integration: 'codecohesion',
+              enabled: checked,
+            })
           }}
         />
       </div>
