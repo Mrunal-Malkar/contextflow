@@ -1,82 +1,104 @@
 # DDD Context Map Relationship Patterns: Validity Matrix
 
-This document captures the valid and invalid combinations of DDD strategic patterns on context map relationships, based on the canonical definitions from Eric Evans' "Domain-Driven Design" and Vaughn Vernon's "Implementing Domain-Driven Design."
+This document captures the valid and invalid combinations of DDD strategic patterns on context map relationships, based on the canonical definitions from Eric Evans' [DDD Reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf) (pp. 32-34), Vaughn Vernon's "Implementing Domain-Driven Design," and the [ddd-crew/context-mapping](https://github.com/ddd-crew/context-mapping) reference.
 
 ## Background: How Patterns Actually Work
 
-In DDD literature, a relationship between two bounded contexts has **two independent annotations**: one for the upstream side and one for the downstream side. The upstream pattern describes how the upstream exposes its model; the downstream pattern describes how the downstream consumes it.
+The ddd-crew classification organizes context mapping along two dimensions:
 
-ContextFlow currently models this as a **single pattern per relationship**, which conflates the upstream and downstream concerns. This document informs the redesign toward a dual-annotation model.
+1. **Team relationship** (the organizational dynamic): Mutually Dependent, Upstream/Downstream, or Free
+2. **Context map patterns** (the technical/governance strategy): the specific patterns teams adopt within that relationship
 
-## Pattern Classification
+ContextFlow currently models this as a **single pattern per relationship**, which conflates these concerns. This document informs the redesign.
 
-### Upstream-Side Patterns (how the upstream exposes)
+## Relationship Categories
+
+The top-level split is the team relationship, which determines which patterns are applicable.
+
+### Upstream-Downstream (power differential)
+
+One context depends on another. The upstream can succeed independently; the downstream is affected by upstream decisions.
+
+Evans presents three **mutually exclusive** responses to this power differential (DDD Reference pp. 32-34). They form a progression based on how much influence and autonomy the downstream team has:
+
+| Pattern | Description | When to use |
+|---------|-------------|-------------|
+| **Customer-Supplier** | The *collaborative* response. Downstream priorities factor into upstream planning. Teams negotiate and jointly develop acceptance tests. | When the upstream team is willing to accommodate downstream needs. The best-case U/D scenario. |
+| **Conformist** | The *capitulation* response. Downstream "slavishly adheres to the model of the upstream team." No translation, no negotiating power. | When "the upstream has no motivation to provide for the downstream team's needs" (Evans). The downstream is helpless and learns to live with what it's given. |
+| **Anti-Corruption Layer** | The *defensive* response. Downstream creates an isolating translation layer. | When "control or communication is not adequate to pull off a shared kernel, partner or customer/supplier relationship" (Evans). ACL is what you reach for when Customer-Supplier has failed or isn't possible. |
+
+These three are **not combinable**:
+- Customer-Supplier + ACL: if the upstream accommodates you, you don't need to defend against their model
+- Customer-Supplier + Conformist: if they're accommodating you, you're not "slavishly adhering"
+- ACL + Conformist: translate vs. adopt as-is are contradictory
+
+**Separately**, the upstream may also adopt exposure patterns that describe *how* it makes its model available. These overlay any of the three relationship patterns above:
 
 | Pattern | Description |
 |---------|-------------|
-| **Open Host Service (OHS)** | Upstream provides a well-defined, general-purpose API for multiple consumers |
-| **Published Language (PL)** | Upstream uses a well-documented, often standardized interchange format |
-| *(no annotation)* | Upstream exposes its internal model directly, possibly with ad-hoc accommodations |
+| **Open Host Service (OHS)** | Upstream provides a well-defined, general-purpose protocol/API for multiple consumers |
+| **Published Language (PL)** | Upstream uses a well-documented, often standardized interchange format. Frequently paired with OHS. |
 
-### Downstream-Side Patterns (how the downstream consumes)
+OHS and PL describe the upstream's exposure mechanism, not the team dynamic. An upstream could provide OHS+PL and the downstream might still use an ACL (because the domains diverge enough to need translation), or might conform (because the published model fits well enough).
 
-| Pattern | Description |
-|---------|-------------|
-| **Anti-Corruption Layer (ACL)** | Downstream translates upstream model to protect its own domain model |
-| **Conformist** | Downstream adopts the upstream model as-is, no translation |
-| *(no annotation)* | Downstream consumes with unspecified strategy |
+### Mutually Dependent (shared power)
 
-### Relationship-Level Patterns (describe the whole relationship)
+No upstream/downstream distinction. Teams coordinate as equals.
 
 | Pattern | Description |
 |---------|-------------|
-| **Customer-Supplier** | Upstream accommodates downstream's needs; downstream has negotiating power |
-| **Partnership** | Mutual dependency; teams coordinate closely, succeed or fail together |
-| **Shared Kernel** | Teams share a subset of the model with joint ownership |
-| **Separate Ways** | Deliberate decision not to integrate; no connection exists |
+| **Partnership** | Mutual dependency; teams coordinate closely, succeed or fail together. Joint interface evolution. |
+| **Shared Kernel** | Teams explicitly share a subset of the domain model with joint ownership and special change management. |
 
-## Valid Combinations
+These patterns are **incompatible with upstream-downstream patterns**. Adding OHS/ACL/Conformist/Customer-Supplier implies a power asymmetry that contradicts the mutual relationship.
 
-### Upstream-Downstream Relationships
+### Free (no relationship)
 
-These involve a power asymmetry: one context depends on another.
+| Pattern | Description |
+|---------|-------------|
+| **Separate Ways** | Deliberate decision not to integrate. No connection exists between the contexts. |
 
-| Upstream Pattern | Downstream Pattern | Relationship Type | Valid? | Notes |
-|-----------------|-------------------|-------------------|--------|-------|
-| OHS | ACL | Customer-Supplier or none | Yes | Very common. Upstream provides clean API, downstream still translates to protect its model |
-| OHS | Conformist | Customer-Supplier or none | Yes | Common. Upstream API is good enough that downstream adopts it directly |
-| OHS + PL | ACL | Customer-Supplier or none | Yes | Gold standard. Upstream provides formal API with standardized format; downstream still isolates |
-| OHS + PL | Conformist | Customer-Supplier or none | Yes | Upstream provides great API/format, downstream happy to adopt it |
-| PL | ACL | Customer-Supplier or none | Yes | Upstream uses standard format (e.g., HL7, SWIFT); downstream translates |
-| PL | Conformist | Customer-Supplier or none | Yes | Upstream uses standard format; downstream adopts it directly |
-| *(none)* | ACL | Customer-Supplier or none | Yes | Upstream exposes raw model; downstream protects itself with translation |
-| *(none)* | Conformist | Customer-Supplier or none | Yes | Upstream exposes raw model; downstream conforms to it (often reluctantly) |
-| *(none)* | Conformist | none (no negotiating power) | Yes | Classic "big upstream, small downstream" scenario (e.g., conforming to an ERP) |
+This is the **absence** of a relationship, not a type of relationship (see "The Separate Ways Problem" below).
 
-### Symmetric Relationships
+### Other
 
-These have no upstream/downstream distinction.
+| Pattern | Description |
+|---------|-------------|
+| **Big Ball of Mud** | Demarcation of a poor-quality system. Used to mark a context whose internals are tangled, signaling that other contexts should protect themselves from its model. |
 
-| Pattern | Upstream/Downstream Annotations | Valid? | Notes |
-|---------|-------------------------------|--------|-------|
-| Partnership | Neither side gets OHS/ACL/etc. | Yes | Both teams coordinate as equals; no translation layer needed |
-| Shared Kernel | Neither side gets OHS/ACL/etc. | Yes | Shared code/model; no need for integration patterns |
-| Separate Ways | N/A (no connection) | Yes | No integration, so no integration patterns apply |
+Big Ball of Mud is a property of a single context, not a relationship pattern. It often implies downstream contexts should use ACL when integrating with it.
+
+## Valid Combinations (Upstream-Downstream)
+
+The relationship pattern (Customer-Supplier, Conformist, or ACL) combines with optional upstream exposure patterns:
+
+| Relationship Pattern | Upstream Exposure | Valid? | Notes |
+|---------------------|------------------|--------|-------|
+| Customer-Supplier | OHS | Yes | Collaborative governance with a clean API |
+| Customer-Supplier | OHS + PL | Yes | Collaborative governance with formal API and standardized format |
+| Customer-Supplier | PL | Yes | Collaborative governance with standardized format |
+| Customer-Supplier | *(none)* | Yes | Collaborative governance, upstream exposes raw model |
+| Conformist | OHS | Yes | Downstream adopts upstream's clean API as-is |
+| Conformist | OHS + PL | Yes | Downstream adopts upstream's formal API/format as-is |
+| Conformist | PL | Yes | Downstream adopts standard format as-is (e.g., HL7, SWIFT) |
+| Conformist | *(none)* | Yes | Classic "big upstream, small downstream" (e.g., conforming to an ERP) |
+| ACL | OHS | Yes | Upstream provides clean API, downstream still translates to protect its model |
+| ACL | OHS + PL | Yes | Even with a great API and standard format, downstream domain needs isolation |
+| ACL | PL | Yes | Standard format exists, downstream translates it |
+| ACL | *(none)* | Yes | Upstream exposes raw model, downstream defends itself |
 
 ## Invalid Combinations
 
 | Combination | Why Invalid |
 |-------------|------------|
-| **PL + Customer-Supplier** (as the defining relationship pattern) | Published Language implies a standardized, often industry-wide format that exists independently of any specific consumer. Customer-Supplier implies the upstream accommodates the downstream's specific needs. These are in tension: if you're publishing a standard language, you're serving all consumers equally, not prioritizing one customer. However, PL *can* appear alongside Customer-Supplier if the upstream publishes a standard format AND also accommodates the downstream's needs in how they evolve that format. |
-| **OHS on downstream side** | OHS describes how an upstream exposes services. A downstream context doesn't "host" a service for its upstream. |
+| **Customer-Supplier + ACL** | If the upstream accommodates your needs (C/S), you don't need to defend against their model (ACL). These represent opposite ends of the collaboration spectrum. |
+| **Customer-Supplier + Conformist** | If the upstream accommodates your needs (C/S), you're not helplessly capitulating (Conformist). |
+| **ACL + Conformist** | Mutually exclusive: either you translate (ACL) or you adopt as-is (Conformist). |
+| **OHS on downstream side** | OHS describes how an upstream exposes services. A downstream doesn't "host" a service for its upstream. |
 | **PL on downstream side** | Published Language describes what the upstream publishes. The downstream either conforms to it or translates it. |
-| **ACL on upstream side** | ACL is a defensive downstream pattern. The upstream doesn't need to "protect" itself from the downstream's model. |
-| **Conformist on upstream side** | Conformist describes downstream capitulation. The upstream, by definition, isn't conforming. |
-| **ACL + Conformist** (same downstream) | Mutually exclusive: either you translate (ACL) or you adopt as-is (Conformist). You can't do both. |
-| **Partnership + any upstream/downstream annotation** | Partnership is symmetric. Adding OHS/ACL/Conformist implies a power asymmetry that contradicts the partnership. |
-| **Shared Kernel + any upstream/downstream annotation** | Same reasoning. Shared Kernel is joint ownership; there's no upstream or downstream. |
-| **Separate Ways + any pattern** | Separate Ways means no integration. You can't simultaneously have no integration and an integration pattern. |
-| **Separate Ways rendered as a connection** | By definition, Separate Ways is the absence of a relationship. Drawing a line between contexts contradicts the pattern's meaning. |
+| **Partnership + any U/D pattern** | Partnership is symmetric. Adding OHS/ACL/Conformist/Customer-Supplier implies power asymmetry. |
+| **Shared Kernel + any U/D pattern** | Same reasoning. Shared Kernel is joint ownership; there's no upstream or downstream. |
+| **Separate Ways + any pattern** | Separate Ways means no integration. Can't simultaneously have no integration and an integration pattern. |
 
 ## The "Separate Ways" Problem
 
@@ -84,7 +106,7 @@ Separate Ways is unique: it's not a relationship pattern, it's the **absence** o
 
 ### Options for the App
 
-1. **Remove Separate Ways from the relationship dropdown entirely.** Instead, represent it as the default state: two contexts with no line between them. Optionally allow users to annotate this decision (e.g., a note on a context saying "deliberately not integrated with X").
+1. **Remove Separate Ways from the relationship dropdown entirely.** Represent it as the default state: two contexts with no line between them. Optionally allow users to annotate this decision (e.g., a note on a context saying "deliberately not integrated with X").
 
 2. **Show it as a dashed/faded non-connection.** If users want to explicitly document the decision, render it as a subtle visual indicator (dashed line, very faint, or X-mark) that clearly reads as "no integration" rather than as a connection.
 
@@ -92,34 +114,40 @@ Separate Ways is unique: it's not a relationship pattern, it's the **absence** o
 
 ## Implications for ContextFlow's Data Model
 
-The current single-pattern model can't express common real-world mappings like "OHS upstream with ACL downstream in a Customer-Supplier relationship." To properly support DDD Context Maps, the relationship model needs:
+The current single-pattern model can't express combinations like "ACL with OHS upstream." To properly support DDD Context Maps, the relationship model needs:
 
 ```
 Relationship {
   id: string
-  fromContextId: string      // downstream
-  toContextId: string        // upstream
+  sourceContextId: string   // upstream
+  targetContextId: string   // downstream
 
-  // Relationship-level (optional)
-  relationshipType?: 'customer-supplier' | 'partnership' | 'shared-kernel'
+  // The team dynamic (mutually exclusive choice)
+  pattern: 'customer-supplier' | 'conformist' | 'anti-corruption-layer'
+         | 'partnership' | 'shared-kernel'
 
-  // Upstream-side annotations (what upstream does)
-  upstreamPatterns?: ('open-host-service' | 'published-language')[]
-
-  // Downstream-side annotations (what downstream does)
-  downstreamPattern?: 'anti-corruption-layer' | 'conformist'
+  // Upstream exposure (only when pattern is C/S, Conformist, or ACL)
+  upstreamExposure?: ('open-host-service' | 'published-language')[]
 }
 ```
 
 This model:
-- Allows OHS + PL together on the upstream side (they're complementary)
-- Keeps ACL vs Conformist mutually exclusive on the downstream side
-- Separates the relationship type from the integration patterns
-- Makes invalid states harder to represent
-- Removes Separate Ways from the relationship type (it's the absence of one)
+- Makes the five relationship patterns a single mutually exclusive choice
+- Allows OHS and PL as optional upstream exposure overlays on any U/D pattern
+- Prevents invalid states (no upstream exposure on Partnership or Shared Kernel)
+- Removes Separate Ways from relationship types (it's the absence of one)
+- Is simpler than the previous three-field model (one choice + optional overlay, not three independent axes)
+
+### Validation Rules
+
+1. If `pattern` is `partnership` or `shared-kernel`: `upstreamExposure` must be empty
+2. `upstreamExposure` can contain OHS, PL, or both (they're complementary)
+3. OHS and PL are only meaningful when the relationship has an upstream-downstream dynamic
 
 ## References
 
 - Evans, Eric. "Domain-Driven Design: Tackling Complexity in the Heart of Software." Chapter 14: Maintaining Model Integrity.
+- Evans, Eric. [DDD Reference](https://www.domainlanguage.com/wp-content/uploads/2016/05/DDD_Reference_2015-03.pdf). pp. 32-34 (Customer-Supplier, Conformist, ACL).
 - Vernon, Vaughn. "Implementing Domain-Driven Design." Chapter 3: Context Maps.
 - Brandolini, Alberto. Various talks and writings on Context Mapping.
+- [ddd-crew/context-mapping](https://github.com/ddd-crew/context-mapping) - Community reference for context mapping patterns.
