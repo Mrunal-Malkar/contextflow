@@ -111,7 +111,10 @@ function CanvasContent() {
   const deleteUser = useEditorStore((s) => s.deleteUser)
   const deleteUserNeed = useEditorStore((s) => s.deleteUserNeed)
   const deleteGroup = useEditorStore((s) => s.deleteGroup)
-  const madeGroup = project && project.groups && project.groups.length > 0
+  const madeGroup = useMemo(
+    () => (project && project.groups && project.groups.length > 0 ? true : false),
+    [project]
+  )
 
   // Temporal state
   const currentDate = useEditorStore((s) => s.temporal.currentDate)
@@ -990,21 +993,12 @@ function CanvasContent() {
   return (
     <div className="relative w-full h-full">
       <TimeSlider />
-      {
-        // add context grouping awareness
-        selectedContextId ? (
-          madeGroup ? (
-            ''
-          ) : (
-            <div className="absolute bottom-4 bg-gray-200 rounded-md right-12 w-auto flex gap-x-1.5 justify-between">
-              <Info className="text-sky-400 text-xl" />
-              <p>"shift+click" on the contexts to make a Group.</p>
-            </div>
-          )
-        ) : (
-          ''
-        )
-      }
+      {selectedContextId != null && !madeGroup && (
+        <div className="absolute p-2 bottom-4 bg-gray-800 align-middle rounded-xl right-12 w-auto flex gap-x-1.5 justify-between">
+          <Info className="text-sky-400 size-4 self-center" />
+          <p className="text-sm text-gray-300">To create group : Hold Shift(or Cmd/Ctrl) & click multiple contexts then click on “Create Group” button.</p>
+        </div>
+      )}
       <div className={`react-flow-wrapper w-full h-full ${isDragging ? 'dragging' : ''}`}>
         <ReactFlow
           nodes={nodes}
