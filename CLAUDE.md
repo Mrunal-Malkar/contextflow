@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 For comprehensive documentation, see:
 - **Product vision & goals**: [docs/VISION.md](docs/VISION.md)
+- **Planning docs & ideas**: `~/Documents/business-hub/products/contextflow-ideas/` (private, outside this public repo)
 - **Technical architecture & data model**: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - **UX principles**: [docs/UX_GUIDELINES.md](docs/UX_GUIDELINES.md)
 - **Getting started**: [README.md](README.md)
@@ -36,8 +37,8 @@ VITE_COLLAB_HOST=localhost:8787 npm run dev
 ## Quality Gates
 
 **Local hooks** (husky) run automatically:
-- **Pre-commit**: Prettier auto-formats staged `src/` files (via lint-staged)
-- **Pre-push**: `npm run typecheck` and `npm run lint` must pass
+- **Pre-commit**: Prettier auto-formats staged `src/` files (via lint-staged), then runs `npm run typecheck` and `npm run lint`
+- **Pre-push**: `npm run typecheck` and `npm run lint` (safety net, same checks as pre-commit)
 
 **CI** (GitHub Actions) runs on every push to `main`: typecheck, lint, format:check, build.
 
